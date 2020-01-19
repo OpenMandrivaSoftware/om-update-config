@@ -1,0 +1,46 @@
+#!/bin/sh
+usage() {
+	cat >&2 <<EOF
+Usage: $0 (install|download|none)
+	Control auto-installation of updates.
+
+	install: Updates are downloaded and installed automatically.
+	download: Updates are downloaded automatically, but must be installed manually.
+	none: You need to check for updates manually.
+EOF
+}
+
+if [ "$(id -u)" != "0" ]; then
+	echo "$0 needs to be run as root."
+	exec sudo $0 "$@"
+fi
+
+if ! [ -e /etc/dnf/automatic.conf ]; then
+	echo "You need dnf-automatic for this tool to work."
+	dnf --refresh -y install dnf-automatic
+fi
+
+case "$1" in
+install)
+	sed -i -e 's,^download_updates.*,download_updates = yes,g' /etc/dnf/automatic.conf
+	sed -i -e 's,^apply_updates.*,apply_updates = yes,g' /etc/dnf/automatic.conf
+	systemctl enable dnf-automatic
+	systemctl start dnf-automatic
+	;;
+download)
+	sed -i -e 's,^download_updates.*,download_updates = yes,g' /etc/dnf/automatic.conf
+	sed -i -e 's,^apply_updates.*,apply_updates = no,g' /etc/dnf/automatic.conf
+	systemctl enable dnf-automatic
+	systemctl start dnf-automatic
+	;;
+none)
+	sed -i -e 's,^download_updates.*,download_updates = no,g' /etc/dnf/automatic.conf
+	sed -i -e 's,^apply_updates.*,apply_updates = no,g' /etc/dnf/automatic.conf
+	systemctl stop dnf-automatic
+	systemctl disable dnf-automatic
+	;;
+*)
+	usage
+	exit 1
+	;;
+esac

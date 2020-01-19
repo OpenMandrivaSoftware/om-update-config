@@ -1,0 +1,9 @@
+[Desktop Entry]
+GenericName=Configure automatic updates
+Name=Update configuration
+Exec=/usr/bin/om-update-config-ui
+X-KDE-StartupNotify=true
+Icon=om-update-config
+Type=Application
+Terminal=false
+Categories=Settings;Qt;KDE;
