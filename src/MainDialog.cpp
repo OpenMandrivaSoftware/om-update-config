@@ -9,7 +9,7 @@ MainDialog::MainDialog(QWidget *parent):QDialog(parent),_layout(this) {
 	_layout.addWidget(_options);
 
 	QVBoxLayout *optionsLayout = new QVBoxLayout(_options);
-	_configs[0] = new QRadioButton(tr("Do not install updates automatically"), _options);
+	_configs[0] = new QRadioButton(tr("Do not download updates automatically"), _options);
 	_configs[1] = new QRadioButton(tr("Download updates automatically, install manually"), _options);
 	_configs[2] = new QRadioButton(tr("Download and install updates automatically"), _options);
 	for(int i=0; i<3; i++)
