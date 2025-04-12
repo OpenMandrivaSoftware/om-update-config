@@ -36,6 +36,7 @@ bool MainDialog::updateConfig(QString config) {
 	if(s.isWritable()) {
 		s.setValue("downnload_updates", _configs[0]->isChecked() ? "no" : "yes");
 		s.setValue("apply_updates", _configs[2]->isChecked() ? "yes" : "no");
+		return true;
 	} else
 		return QProcess::execute("/usr/bin/pkexec", QStringList() << "/usr/bin/om-update-config" << config);
 }
