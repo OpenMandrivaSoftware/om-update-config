@@ -15,29 +15,18 @@ if [ "$(id -u)" != "0" ]; then
 	exec sudo $0 "$@"
 fi
 
-if ! [ -e /etc/dnf/automatic.conf ]; then
-	echo "You need dnf-automatic for this tool to work."
-	dnf --refresh -y install dnf-automatic
-fi
-
 case "$1" in
 install)
-	sed -i -e 's,^download_updates.*,download_updates = yes,g' /etc/dnf/automatic.conf
-	sed -i -e 's,^apply_updates.*,apply_updates = yes,g' /etc/dnf/automatic.conf
-	systemctl enable dnf-automatic
-	systemctl start dnf-automatic
+	[ -e /etc/sysconfig/system-update ] && sed -i -e 's,^NO_INSTALL,# NO_INSTALL,' /etc/sysconfig/system-update
+	systemctl enable system-update.timer
 	;;
 download)
-	sed -i -e 's,^download_updates.*,download_updates = yes,g' /etc/dnf/automatic.conf
-	sed -i -e 's,^apply_updates.*,apply_updates = no,g' /etc/dnf/automatic.conf
-	systemctl enable dnf-automatic
-	systemctl start dnf-automatic
+	[ -e /etc/sysconfig/system-update ] && sed -i -e '/^NO_INSTALL/d' /etc/sysconfig/system-update
+	echo 'NO_INSTALL=1' >>/etc/sysconfig/system-update
+	systemctl enable system-update.timer
 	;;
 none)
-	sed -i -e 's,^download_updates.*,download_updates = no,g' /etc/dnf/automatic.conf
-	sed -i -e 's,^apply_updates.*,apply_updates = no,g' /etc/dnf/automatic.conf
-	systemctl stop dnf-automatic
-	systemctl disable dnf-automatic
+	systemctl disable system-update.timer
 	;;
 *)
 	usage

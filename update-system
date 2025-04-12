@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Return the package name of the kernel currently in use
+# (for determining whether the package has been updated
+# and therefore a reboot is needed)
+kernel_package() {
+	local USED_KERNEL=kernel
+	if uname -r |grep -q rc; then
+		USED_KERNEL=${USED_KERNEL}-rc
+	fi
+	if uname -r |grep -q server; then
+		USED_KERNEL=${USED_KERNEL}-server
+	else
+		USED_KERNEL=${USED_KERNEL}-desktop
+	fi
+	if uname -r |grep -q gcc; then
+		USED_KERNEL=${USED_KERNEL}-gcc
+	fi
+	# "custom" kernels have been built from the kernel-source
+	# package -- let's not mess with them, they don't get updated
+	# through package management
+	if uname -r |grep -q custom; then
+		USED_KERNEL=""
+	fi
+	# A kernel that doesn't have an OMV tag doesn't come from
+	# our packages (likely an upstream kernel built from source),
+	# so don't mess with that either
+	if ! uname -r |grep -q omv; then
+		USED_KERNEL=""
+	fi
+	echo $USED_KERNEL
+}
+
+if [ -e /etc/sysconfig/system-update ]; then
+	. /etc/sysconfig/system-update
+fi
+
+if [ -z "$KERNEL_PACKAGE" -a "$NO_REBOOT_ON_KERNEL_UPDATE" != "1" ]; then
+	KERNEL_PACKAGE="$(kernel_package)"
+fi
+if [ -n "$KERNEL_PACKAGE" ]; then
+	OLD_KERNELS="$(rpm -q $KERNEL_PACKAGE |sort)"
+fi
+
+[ -z "$NO_ALLOWERASING" ] && ALLOWERASING=--allowerasing
+[ "$NO_INSTALL" = "1" ] && DOWNLOADONLY=--downloadonly
+
+dnf -y --refresh $ALLOWERASING $DOWNLOADONLY distro-sync
+
+if [ -n "$KERNEL_PACKAGE" ]; then
+	NEW_KERNELS="$(rpm -q $KERNEL_PACKAGE |sort)"
+	if [ "$OLD_KERNELS" != "$NEW_KERNELS" ]; then
+		echo "Rebooting because $KERNEL_PACKAGE has been updated"
+		reboot
+	fi
+fi

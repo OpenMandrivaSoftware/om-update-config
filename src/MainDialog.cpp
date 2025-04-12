@@ -2,6 +2,7 @@
 #include <QSettings>
 #include <QPushButton>
 #include <QProcess>
+#include <QFile>
 #include <iostream>
 
 MainDialog::MainDialog(QWidget *parent):QDialog(parent),_layout(this) {
@@ -15,13 +16,19 @@ MainDialog::MainDialog(QWidget *parent):QDialog(parent),_layout(this) {
 	for(int i=0; i<3; i++)
 		optionsLayout->addWidget(_configs[i]);
 
-	QSettings s("/etc/dnf/automatic.conf", QSettings::IniFormat);
-	s.beginGroup("commands");
-	if(s.value("apply_updates").toString() == "yes")
-		_configs[2]->setChecked(true);
-	else if(s.value("download_updates").toString() == "yes")
-		_configs[1]->setChecked(true);
-	else
+	if(QProcess::execute("/usr/bin/systemctl", QStringList{QStringLiteral("is-enabled"), QStringLiteral("system-update.timer")}) == 0) {
+		int conf = 2;
+		QFile f("/etc/sysconfig/system-update");
+		if(f.open(QFile::ReadOnly)) {
+			while(!f.atEnd()) {
+				QByteArray line = f.readLine();
+				if(line.startsWith("NO_INSTALL=1"))
+					conf = 1;
+			}
+			f.close();
+		}
+		_configs[conf]->setChecked(true);
+	} else
 		_configs[0]->setChecked(true);
 
 	_buttons = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel, this);
@@ -32,13 +39,7 @@ MainDialog::MainDialog(QWidget *parent):QDialog(parent),_layout(this) {
 }
 
 bool MainDialog::updateConfig(QString config) {
-	QSettings s("/etc/dnf/automatic.conf", QSettings::IniFormat);
-	if(s.isWritable()) {
-		s.setValue("downnload_updates", _configs[0]->isChecked() ? "no" : "yes");
-		s.setValue("apply_updates", _configs[2]->isChecked() ? "yes" : "no");
-		return true;
-	} else
-		return QProcess::execute("/usr/bin/pkexec", QStringList() << "/usr/bin/om-update-config" << config);
+	return QProcess::execute("/usr/bin/pkexec", QStringList() << "/usr/bin/om-update-config" << config);
 }
 
 void MainDialog::buttonClicked(QAbstractButton *button) {

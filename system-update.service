@@ -1,0 +1,12 @@
+[Unit]
+Description=Install OpenMandriva updates
+
+[Service]
+Type=oneshot
+ExecStartPre=date
+ExecStart=/usr/bin/update-system
+StandardOutput=append:/var/log/update.log
+StandardError=append:/var/log/update.log
+
+[Install]
+WantedBy=multi-user.target

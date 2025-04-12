@@ -1,0 +1,7 @@
+/var/log/update.log {
+	missingok
+	notifempty
+	rotate 4
+	weekly
+	compress
+}
