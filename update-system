@@ -45,7 +45,7 @@ fi
 [ -z "$NO_ALLOWERASING" ] && ALLOWERASING=--allowerasing
 [ "$NO_INSTALL" = "1" ] && DOWNLOADONLY=--downloadonly
 
-dnf -y --refresh $ALLOWERASING $DOWNLOADONLY distro-sync
+dnf -y --refresh $DOWNLOADONLY distro-sync $ALLOWERASING
 
 if [ -n "$KERNEL_PACKAGE" ]; then
 	NEW_KERNELS="$(rpm -q $KERNEL_PACKAGE |sort)"
